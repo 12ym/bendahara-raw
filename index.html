@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistem Bendahara — RA Al Washliyah (Prototipe)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --ink:#1E2B22;
+    --ink-soft:#4B5B50;
+    --emerald-900:#15392C;
+    --emerald-700:#1F4D3D;
+    --emerald-500:#2F6B55;
+    --emerald-100:#E3EEE7;
+    --gold-600:#B9892C;
+    --gold-400:#D9A441;
+    --gold-200:#EFD9A0;
+    --gold-100:#F8EFD9;
+    --ivory:#FBF6EA;
+    --paper:#FFFDF8;
+    --sky-500:#5B8C87;
+    --terracotta:#B3432F;
+    --terracotta-100:#F6E6E1;
+    --line:rgba(31,77,61,0.16);
+    --shadow:0 16px 40px -20px rgba(21,57,44,0.35);
+    --radius:14px;
+    --font-display:'Fraunces', serif;
+    --font-body:'Plus Jakarta Sans', sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:var(--font-body);color:var(--ink);background:var(--ivory);line-height:1.5;-webkit-font-smoothing:antialiased;}
+  h1,h2,h3,h4{font-family:var(--font-display);margin:0;font-weight:600;color:var(--emerald-900);}
+  p{margin:0;}
+  button{font-family:inherit;cursor:pointer;}
+  input,select{font-family:inherit;}
+  .hidden{display:none !important;}
+
+  /* ---------- prototype banner ---------- */
+  .proto-banner{
+    background:var(--emerald-900);color:var(--ivory);font-size:13px;font-weight:600;
+    padding:9px 16px;text-align:center;letter-spacing:.01em;
+  }
+  .proto-banner span{color:var(--gold-200);}
+
+  /* ---------- shell ---------- */
+  .shell{display:flex;min-height:100vh;}
+  .sidebar{
+    width:230px;flex:none;background:var(--emerald-900);color:var(--ivory);
+    display:flex;flex-direction:column;padding:22px 16px;gap:4px;
+  }
+  .brand{display:flex;align-items:center;gap:10px;padding:0 8px 20px;border-bottom:1px solid rgba(251,246,234,.14);margin-bottom:14px;}
+  .brand-mark{width:34px;height:34px;border-radius:9px;background:var(--gold-400);color:var(--emerald-900);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:700;font-size:16px;flex:none;}
+  .brand-text strong{display:block;font-family:var(--font-display);font-size:15px;line-height:1.2;}
+  .brand-text span{display:block;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--gold-200);font-weight:700;margin-top:2px;}
+  nav.side-nav{display:flex;flex-direction:column;gap:2px;}
+  .nav-btn{
+    display:flex;align-items:center;gap:10px;text-align:left;background:none;border:none;color:rgba(251,246,234,.78);
+    padding:10px 12px;border-radius:10px;font-size:14px;font-weight:600;transition:background .15s ease,color .15s ease;
+  }
+  .nav-btn svg{width:17px;height:17px;flex:none;}
+  .nav-btn:hover{background:rgba(251,246,234,.08);color:var(--ivory);}
+  .nav-btn.active{background:var(--gold-400);color:var(--emerald-900);}
+  .sidebar-foot{margin-top:auto;padding-top:16px;border-top:1px solid rgba(251,246,234,.14);}
+  .role-box{margin-top:10px;}
+  .role-box label{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--gold-200);font-weight:700;margin-bottom:6px;}
+  .role-box select{width:100%;padding:8px 10px;border-radius:8px;border:1px solid rgba(251,246,234,.25);background:rgba(251,246,234,.06);color:var(--ivory);font-size:13.5px;font-weight:600;}
+  .role-box select option{color:var(--ink);}
+  .parent-btn{
+    margin-top:12px;width:100%;padding:9px 10px;border-radius:8px;border:1.5px dashed rgba(251,246,234,.35);
+    background:none;color:rgba(251,246,234,.85);font-size:12.5px;font-weight:700;
+  }
+  .parent-btn:hover{border-color:var(--gold-400);color:var(--gold-200);}
+
+  /* ---------- main ---------- */
+  .main{flex:1;min-width:0;padding:26px 32px 60px;}
+  .topbar{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:22px;flex-wrap:wrap;}
+  .topbar h1{font-size:25px;}
+  .topbar .sub{color:var(--ink-soft);font-size:13.5px;margin-top:4px;}
+  .topbar-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .chip{display:inline-flex;align-items:center;gap:6px;background:var(--emerald-100);color:var(--emerald-900);font-size:12.5px;font-weight:700;padding:6px 12px;border-radius:999px;}
+  select.filter-select{padding:8px 12px;border-radius:8px;border:1px solid var(--line);background:var(--paper);font-size:13px;font-weight:600;color:var(--ink);}
+
+  /* ---------- cards / kpi ---------- */
+  .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:22px;}
+  @media (max-width:1000px){.kpi-grid{grid-template-columns:repeat(2,1fr);}}
+  .kpi-card{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;}
+  .kpi-card .kpi-label{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-soft);}
+  .kpi-card .kpi-value{font-family:var(--font-display);font-size:26px;color:var(--emerald-900);margin-top:8px;}
+  .kpi-card .kpi-note{font-size:12px;color:var(--ink-soft);margin-top:4px;}
+  .kpi-card.alert .kpi-value{color:var(--terracotta);}
+
+  .panel{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:22px;margin-bottom:20px;}
+  .panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;flex-wrap:wrap;}
+  .panel-head h3{font-size:17px;}
+  .panel-head p{font-size:12.5px;color:var(--ink-soft);margin-top:2px;}
+
+  .bar-row{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+  .bar-row .bar-label{width:90px;flex:none;font-size:13px;font-weight:700;color:var(--ink);}
+  .bar-track{flex:1;height:14px;background:var(--emerald-100);border-radius:999px;overflow:hidden;}
+  .bar-fill{height:100%;background:var(--emerald-700);border-radius:999px;}
+  .bar-row .bar-num{width:64px;flex:none;text-align:right;font-size:12.5px;color:var(--ink-soft);font-weight:600;}
+
+  .action-list{display:flex;flex-direction:column;gap:10px;}
+  .action-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 14px;border:1px solid var(--line);border-radius:10px;background:var(--ivory);}
+  .action-item .ai-name{font-size:13.5px;font-weight:700;color:var(--ink);}
+  .action-item .ai-note{font-size:12px;color:var(--ink-soft);margin-top:2px;}
+  .action-item button{font-size:12px;font-weight:700;padding:7px 12px;border-radius:8px;border:none;background:var(--gold-400);color:var(--emerald-900);}
+
+  /* ---------- buttons ---------- */
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:10px 16px;border-radius:9px;font-weight:700;font-size:13.5px;border:1.5px solid transparent;}
+  .btn-primary{background:var(--emerald-700);color:var(--ivory);}
+  .btn-primary:hover{background:var(--emerald-900);}
+  .btn-gold{background:var(--gold-400);color:var(--emerald-900);}
+  .btn-gold:hover{background:var(--gold-600);}
+  .btn-outline{background:transparent;border-color:var(--emerald-700);color:var(--emerald-700);}
+  .btn-outline:hover{background:var(--emerald-100);}
+  .btn-sm{padding:6px 11px;font-size:12px;border-radius:7px;}
+  .btn:disabled{opacity:.45;cursor:not-allowed;}
+
+  /* ---------- table ---------- */
+  table{width:100%;border-collapse:collapse;font-size:13.5px;}
+  th{text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-soft);padding:9px 12px;border-bottom:1.5px solid var(--line);white-space:nowrap;}
+  td{padding:11px 12px;border-bottom:1px solid var(--line);color:var(--ink);vertical-align:middle;}
+  tr:last-child td{border-bottom:none;}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;color:var(--ink-soft);}
+  .table-wrap{overflow-x:auto;}
+
+  .badge{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;padding:4px 10px;border-radius:999px;}
+  .badge-lunas{background:var(--emerald-100);color:var(--emerald-700);}
+  .badge-belum{background:var(--terracotta-100);color:var(--terracotta);}
+  .badge-menunggu{background:var(--gold-100);color:var(--gold-600);}
+
+  /* ---------- forms ---------- */
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+  @media (max-width:640px){.form-grid{grid-template-columns:1fr;}}
+  .field label{display:block;font-size:12px;font-weight:700;color:var(--ink-soft);margin-bottom:6px;}
+  .field input,.field select{width:100%;padding:10px 12px;border-radius:8px;border:1.5px solid var(--line);background:var(--paper);font-size:13.5px;color:var(--ink);}
+  .field input:focus,.field select:focus{outline:none;border-color:var(--emerald-500);}
+
+  .empty-note{font-size:13px;color:var(--ink-soft);padding:18px 4px;text-align:center;}
+  .role-note{display:flex;gap:8px;align-items:flex-start;background:var(--emerald-100);border-radius:10px;padding:11px 14px;font-size:12.5px;color:var(--emerald-900);margin-bottom:16px;}
+
+  /* ---------- kegiatan cards ---------- */
+  .keg-card-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  @media (max-width:760px){.keg-card-grid{grid-template-columns:1fr;}}
+  .keg-card{border:1px solid var(--line);border-radius:12px;padding:16px;cursor:pointer;background:var(--ivory);transition:border-color .15s ease;}
+  .keg-card:hover{border-color:var(--gold-400);}
+  .keg-card.active{border-color:var(--emerald-700);background:var(--emerald-100);}
+  .keg-card h4{font-size:15px;color:var(--emerald-900);}
+  .keg-card .keg-meta{font-size:12px;color:var(--ink-soft);margin-top:4px;}
+  .keg-card .keg-progress{margin-top:10px;}
+
+  /* ---------- modal (parent portal) ---------- */
+  .modal{position:fixed;inset:0;background:rgba(21,57,44,.55);display:flex;align-items:center;justify-content:center;padding:20px;z-index:100;}
+  .modal-card{background:var(--paper);border-radius:18px;max-width:440px;width:100%;padding:26px;box-shadow:var(--shadow);max-height:88vh;overflow-y:auto;}
+  .modal-card h3{font-size:19px;}
+  .modal-card .modal-sub{font-size:12.5px;color:var(--ink-soft);margin-top:6px;margin-bottom:18px;}
+  .modal-close{display:flex;justify-content:flex-end;}
+  .modal-close button{background:none;border:none;color:var(--ink-soft);font-size:13px;font-weight:700;}
+  .pp-row{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line);font-size:13.5px;}
+  .pp-row:last-child{border-bottom:none;}
+
+  .import-preview{margin-top:14px;border:1px solid var(--line);border-radius:10px;overflow:hidden;}
+  .export-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;}
+  @media (max-width:700px){.export-grid{grid-template-columns:1fr;}}
+  .export-card{border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:10px;}
+  .export-card h4{font-size:14.5px;color:var(--emerald-900);}
+  .export-card p{font-size:12.5px;color:var(--ink-soft);}
+</style>
+</head>
+<body>
+
+<div class="proto-banner">🔧 Mode Prototipe — data di bawah ini contoh dan tersimpan sementara <span>(refresh halaman = data kembali ke awal)</span>. Belum terhubung ke data PPDB sungguhan.</div>
+
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">RA</div>
+      <div class="brand-text"><strong>Bendahara</strong><span>Al Washliyah</span></div>
+    </div>
+    <nav class="side-nav" id="sideNav">
+      <button class="nav-btn active" data-view="dashboard">📊 Dashboard</button>
+      <button class="nav-btn" data-view="siswa">🧒 Data Siswa</button>
+      <button class="nav-btn" data-view="spp">🧾 SPP</button>
+      <button class="nav-btn" data-view="tabungan">💰 Tabungan</button>
+      <button class="nav-btn" data-view="biaya">🎒 Biaya Sekolah</button>
+      <button class="nav-btn" data-view="kegiatan">🎪 Kegiatan</button>
+      <button class="nav-btn" data-view="export">📥 Export / Import</button>
+    </nav>
+    <div class="sidebar-foot">
+      <div class="role-box">
+        <label>Masuk sebagai</label>
+        <select id="roleSwitch">
+          <option value="bendahara">Bendahara (akses penuh)</option>
+          <option value="kepsek">Kepala Sekolah (lihat saja)</option>
+        </select>
+      </div>
+      <button class="parent-btn" id="openParentPortal">👨‍👩‍👧 Lihat sebagai Orang Tua</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <h1 id="pageTitle">Dashboard</h1>
+        <p class="sub" id="pageSub">Ringkasan keuangan tahun ajaran 2025/2026</p>
+      </div>
+      <div class="topbar-right">
+        <span class="chip">Tahun Ajaran 2025/2026</span>
+        <select class="filter-select" id="kelompokFilter">
+          <option value="all">Semua Kelompok</option>
+          <option value="A">Kelompok A</option>
+          <option value="B">Kelompok B</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="view-dashboard" class="view"></div>
+    <div id="view-siswa" class="view hidden"></div>
+    <div id="view-spp" class="view hidden"></div>
+    <div id="view-tabungan" class="view hidden"></div>
+    <div id="view-biaya" class="view hidden"></div>
+    <div id="view-kegiatan" class="view hidden"></div>
+    <div id="view-export" class="view hidden"></div>
+  </main>
+</div>
+
+<div class="modal hidden" id="parentModal">
+  <div class="modal-card">
+    <div class="modal-close"><button id="closeParentPortal">✕ Tutup</button></div>
+    <h3>Portal Orang Tua</h3>
+    <p class="modal-sub">Demo — versi nyatanya akan pakai Nomor Pendaftaran PPDB + tanggal lahir anak. Di sini cukup masukkan salah satu kode akses contoh di bawah.</p>
+    <div id="parentLogin">
+      <div class="field" style="margin-bottom:12px;">
+        <label>Kode Akses Keuangan (6 digit)</label>
+        <input type="text" id="parentCode" placeholder="contoh: 482910" maxlength="6">
+      </div>
+      <button class="btn btn-primary" id="parentSubmit" style="width:100%;">Cek Status</button>
+      <p class="empty-note" id="parentError" style="display:none;color:var(--terracotta);"></p>
+      <p style="font-size:11.5px;color:var(--ink-soft);margin-top:14px;">Coba kode: 482910, 117734, atau 672940</p>
+    </div>
+    <div id="parentResult" class="hidden"></div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// DATA LAYER (in-memory — prototipe; akan diganti dengan
+// penyimpanan sungguhan setelah keputusan hosting final)
+// ============================================================
+var BULAN_LIST = ['2026-03','2026-04','2026-05','2026-06'];
+var BULAN_LABEL = {'2026-03':'Maret 2026','2026-04':'April 2026','2026-05':'Mei 2026','2026-06':'Juni 2026'};
+var SPP_NOMINAL = 250000;
+
+var DB = { siswa: [], spp: [], tabungan: [], biaya: [], kegiatan: [], kegiatanBayar: [] };
+
+DB.siswa = [
+  {id:'s1', regNo:'RAW-2026-7F3K9', nama:'Ahmad Fadhil Pratama', kelompok:'A', namaOrtu:'Bapak Hendra Pratama', noWa:'62812345601', kodeAkses:'482910', status:'aktif'},
+  {id:'s2', regNo:'RAW-2026-2D8M1', nama:'Siti Aisyah Ramadhani', kelompok:'A', namaOrtu:'Ibu Nurul Ramadhani', noWa:'62812345602', kodeAkses:'117734', status:'aktif'},
+  {id:'s3', regNo:'RAW-2026-9Q2L4', nama:'Muhammad Rizky Saputra', kelompok:'A', namaOrtu:'Bapak Agus Saputra', noWa:'62812345603', kodeAkses:'903281', status:'aktif'},
+  {id:'s4', regNo:'RAW-2026-5T7N3', nama:'Khadijah Putri Lestari', kelompok:'A', namaOrtu:'Ibu Sari Lestari', noWa:'62812345604', kodeAkses:'264471', status:'aktif'},
+  {id:'s5', regNo:'RAW-2026-3K9P6', nama:'Yusuf Al Hafiz', kelompok:'A', namaOrtu:'Bapak Dedi Hafiz', noWa:'62812345605', kodeAkses:'558102', status:'aktif'},
+  {id:'s6', regNo:'RAW-2026-8M4R2', nama:'Fatimah Az Zahra', kelompok:'A', namaOrtu:'Ibu Wulan Zahra', noWa:'62812345606', kodeAkses:'790233', status:'aktif'},
+  {id:'s7', regNo:'RAW-2026-1L6T8', nama:'Abdullah Rasyid', kelompok:'A', namaOrtu:'Bapak Iwan Rasyid', noWa:'62812345607', kodeAkses:'334821', status:'aktif'},
+  {id:'s8', regNo:'RAW-2026-6P3K5', nama:'Hasan Maulana', kelompok:'B', namaOrtu:'Bapak Joko Maulana', noWa:'62812345608', kodeAkses:'672940', status:'aktif'},
+  {id:'s9', regNo:'RAW-2026-4N8Q1', nama:'Zahra Amelia', kelompok:'B', namaOrtu:'Ibu Lina Amelia', noWa:'62812345609', kodeAkses:'185609', status:'aktif'},
+  {id:'s10', regNo:'RAW-2026-7R2M9', nama:'Ibrahim Akbar', kelompok:'B', namaOrtu:'Bapak Faisal Akbar', noWa:'62812345610', kodeAkses:'426183', status:'aktif'},
+  {id:'s11', regNo:'RAW-2026-2T5L7', nama:'Maryam Salsabila', kelompok:'B', namaOrtu:'Ibu Indah Salsabila', noWa:'62812345611', kodeAkses:'951067', status:'aktif'},
+  {id:'s12', regNo:'RAW-2026-9K1P4', nama:'Umar Faruq', kelompok:'B', namaOrtu:'Bapak Rudi Faruq', noWa:'62812345612', kodeAkses:'308755', status:'aktif'},
+  {id:'s13', regNo:'RAW-2026-5Q7N2', nama:'Aisyah Nur Fadilah', kelompok:'B', namaOrtu:'Ibu Mega Fadilah', noWa:'62812345613', kodeAkses:'647392', status:'aktif'},
+  {id:'s14', regNo:'RAW-2026-3M9T6', nama:'Bilal Ramadhan', kelompok:'B', namaOrtu:'Bapak Andi Ramadhan', noWa:'62812345614', kodeAkses:'719428', status:'aktif'}
+];
+
+function seedSpp(){
+  var arr = [];
+  DB.siswa.forEach(function(sw, si){
+    BULAN_LIST.forEach(function(bln, bi){
+      var idx = (si + bi) % 4;
+      var status, metode, tanggalBayar, dicatatOleh;
+      if(idx === 0){ status='lunas'; metode='tunai'; tanggalBayar=bln+'-05'; dicatatOleh='Bendahara'; }
+      else if(idx === 1){ status='lunas'; metode='transfer'; tanggalBayar=bln+'-07'; dicatatOleh='Bendahara'; }
+      else if(idx === 2){ status='menunggu'; metode='transfer'; tanggalBayar=null; dicatatOleh=null; }
+      else { status='belum'; metode=null; tanggalBayar=null; dicatatOleh=null; }
+      arr.push({id:'spp_'+sw.id+'_'+bln, siswaId:sw.id, bulan:bln, nominal:SPP_NOMINAL, status:status, metode:metode, tanggalBayar:tanggalBayar, dicatatOleh:dicatatOleh});
+    });
+  });
+  return arr;
+}
+
+function seedTabungan(){
+  var arr = [];
+  DB.siswa.forEach(function(sw, si){
+    var saldo = 0;
+    var dates = ['2026-01-10','2026-02-10','2026-03-10','2026-04-10','2026-05-10'];
+    dates.forEach(function(d, di){
+      var jenis = (di === 3 && si % 5 === 0) ? 'tarik' : 'setor';
+      var nominal = jenis === 'setor' ? (20000 + (si % 3) * 5000) : 15000;
+      saldo += jenis === 'setor' ? nominal : -nominal;
+      arr.push({id:'tab_'+sw.id+'_'+di, siswaId:sw.id, tanggal:d, jenis:jenis, nominal:nominal, saldoSetelah:saldo, dicatatOleh:'Bendahara'});
+    });
+  });
+  return arr;
+}
+
+function seedBiaya(){
+  var arr = [];
+  DB.siswa.forEach(function(sw, si){
+    arr.push({id:'biaya_'+sw.id+'_pangkal', siswaId:sw.id, jenis:'Uang Pangkal', nominal:1500000, status: si % 6 === 0 ? 'belum' : 'lunas', tanggalBayar: si % 6 === 0 ? null : '2025-07-10'});
+    arr.push({id:'biaya_'+sw.id+'_seragam', siswaId:sw.id, jenis:'Seragam', nominal:350000, status: si % 4 === 0 ? 'belum' : 'lunas', tanggalBayar: si % 4 === 0 ? null : '2025-07-15'});
+  });
+  return arr;
+}
+
+DB.kegiatan = [
+  {id:'keg1', nama:'Outing Kebun Binatang', totalPerAnak:150000, tanggal:'2026-05-20'},
+  {id:'keg2', nama:'Pentas Seni Akhir Tahun', totalPerAnak:100000, tanggal:'2026-06-25'}
+];
+
+function seedKegiatanBayar(){
+  var arr = [];
+  DB.kegiatan.forEach(function(keg){
+    DB.siswa.forEach(function(sw, si){
+      var dibayar;
+      var r = si % 5;
+      if(r === 0) dibayar = 0;
+      else if(r === 1) dibayar = Math.round(keg.totalPerAnak * 0.5);
+      else dibayar = keg.totalPerAnak;
+      arr.push({id:'kb_'+keg.id+'_'+sw.id, kegiatanId:keg.id, siswaId:sw.id, dibayar:dibayar, kekurangan: keg.totalPerAnak - dibayar});
+    });
+  });
+  return arr;
+}
+
+DB.spp = seedSpp();
+DB.tabungan = seedTabungan();
+DB.biaya = seedBiaya();
+DB.kegiatanBayar = seedKegiatanBayar();
+
+// ============================================================
+// STATE & HELPERS
+// ============================================================
+var state = { view:'dashboard', role:'bendahara', kelompok:'all', sppBulan: BULAN_LIST[BULAN_LIST.length-1], tabunganSiswaId: DB.siswa[0].id, kegiatanId: DB.kegiatan[0].id };
+
+function rp(n){ return 'Rp' + Math.round(n).toLocaleString('id-ID'); }
+function getSiswa(id){ return DB.siswa.filter(function(s){ return s.id === id; })[0]; }
+function isBendahara(){ return state.role === 'bendahara'; }
+function filteredSiswa(){
+  if(state.kelompok === 'all') return DB.siswa;
+  return DB.siswa.filter(function(s){ return s.kelompok === state.kelompok; });
+}
+function badge(status){
+  if(status === 'lunas') return '<span class="badge badge-lunas">✓ Lunas</span>';
+  if(status === 'menunggu') return '<span class="badge badge-menunggu">⏳ Menunggu Verifikasi</span>';
+  return '<span class="badge badge-belum">✕ Belum Bayar</span>';
+}
+function actionOnly(html){ return isBendahara() ? html : ''; }
+
+// ============================================================
+// RENDER: DASHBOARD
+// ============================================================
+function renderDashboard(){
+  var siswaList = filteredSiswa();
+  var ids = siswaList.map(function(s){ return s.id; });
+  var latestBulan = BULAN_LIST[BULAN_LIST.length - 1];
+
+  var sppLatest = DB.spp.filter(function(r){ return r.bulan === latestBulan && ids.indexOf(r.siswaId) > -1; });
+  var totalTerkumpul = sppLatest.filter(function(r){ return r.status === 'lunas'; }).reduce(function(a,r){ return a + r.nominal; }, 0);
+  var jumlahBelum = sppLatest.filter(function(r){ return r.status === 'belum'; }).length;
+  var jumlahMenunggu = DB.spp.filter(function(r){ return r.status === 'menunggu' && ids.indexOf(r.siswaId) > -1; }).length;
+
+  var totalTabungan = 0;
+  siswaList.forEach(function(s){
+    var rows = DB.tabungan.filter(function(t){ return t.siswaId === s.id; });
+    if(rows.length) totalTabungan += rows[rows.length-1].saldoSetelah;
+  });
+
+  var kegKurang = DB.kegiatanBayar.filter(function(k){ return k.kekurangan > 0 && ids.indexOf(k.siswaId) > -1; }).length;
+
+  var kelA = DB.siswa.filter(function(s){ return s.kelompok === 'A'; });
+  var kelB = DB.siswa.filter(function(s){ return s.kelompok === 'B'; });
+  function lunasCount(list){
+    var idsL = list.map(function(s){ return s.id; });
+    return DB.spp.filter(function(r){ return r.bulan === latestBulan && r.status === 'lunas' && idsL.indexOf(r.siswaId) > -1; }).length;
+  }
+  var aLunas = lunasCount(kelA), bLunas = lunasCount(kelB);
+
+  var tunggakan = [];
+  siswaList.forEach(function(s){
+    var belumCount = DB.spp.filter(function(r){ return r.siswaId === s.id && r.status === 'belum'; }).length;
+    if(belumCount >= 1) tunggakan.push({siswa:s, belumCount:belumCount});
+  });
+  var menungguList = DB.spp.filter(function(r){ return r.status === 'menunggu' && ids.indexOf(r.siswaId) > -1; });
+
+  var html = '';
+  html += '<div class="kpi-grid">';
+  html += '<div class="kpi-card"><div class="kpi-label">SPP Terkumpul · '+BULAN_LABEL[latestBulan]+'</div><div class="kpi-value">'+rp(totalTerkumpul)+'</div><div class="kpi-note">dari '+sppLatest.length+' siswa</div></div>';
+  html += '<div class="kpi-card alert"><div class="kpi-label">Belum Bayar SPP</div><div class="kpi-value">'+jumlahBelum+' siswa</div><div class="kpi-note">bulan berjalan</div></div>';
+  html += '<div class="kpi-card"><div class="kpi-label">Total Tabungan Siswa</div><div class="kpi-value">'+rp(totalTabungan)+'</div><div class="kpi-note">akumulasi saldo berjalan</div></div>';
+  html += '<div class="kpi-card alert"><div class="kpi-label">Kegiatan Kurang Bayar</div><div class="kpi-value">'+kegKurang+' siswa</div><div class="kpi-note">dari semua kegiatan aktif</div></div>';
+  html += '</div>';
+
+  html += '<div class="panel">';
+  html += '<div class="panel-head"><div><h3>SPP Lunas per Kelompok — '+BULAN_LABEL[latestBulan]+'</h3><p>Perbandingan jumlah siswa yang sudah lunas terhadap total siswa per kelompok</p></div></div>';
+  html += '<div class="bar-row"><div class="bar-label">Kelompok A</div><div class="bar-track"><div class="bar-fill" style="width:'+Math.round(aLunas/kelA.length*100)+'%"></div></div><div class="bar-num">'+aLunas+'/'+kelA.length+'</div></div>';
+  html += '<div class="bar-row"><div class="bar-label">Kelompok B</div><div class="bar-track"><div class="bar-fill" style="width:'+Math.round(bLunas/kelB.length*100)+'%"></div></div><div class="bar-num">'+bLunas+'/'+kelB.length+'</div></div>';
+  html += '</div>';
+
+  html += '<div class="panel">';
+  html += '<div class="panel-head"><div><h3>Perlu Tindakan</h3><p>Klaim transfer menunggu verifikasi & tunggakan SPP</p></div></div>';
+  html += '<div class="action-list">';
+  if(menungguList.length === 0 && tunggakan.length === 0){
+    html += '<p class="empty-note">Tidak ada yang perlu ditindaklanjuti saat ini 🎉</p>';
+  }
+  menungguList.forEach(function(r){
+    var s = getSiswa(r.siswaId);
+    html += '<div class="action-item"><div><div class="ai-name">'+s.nama+'</div><div class="ai-note">Klaim transfer SPP '+BULAN_LABEL[r.bulan]+' · '+rp(r.nominal)+'</div></div>'+actionOnly('<button onclick="goToSppVerify(\''+r.id+'\')">Verifikasi</button>')+'</div>';
+  });
+  tunggakan.forEach(function(t){
+    html += '<div class="action-item"><div><div class="ai-name">'+t.siswa.nama+'</div><div class="ai-note">Belum bayar SPP — '+t.belumCount+' bulan</div></div>'+actionOnly('<button onclick="setView(\'spp\')">Lihat SPP</button>')+'</div>';
+  });
+  html += '</div></div>';
+
+  document.getElementById('view-dashboard').innerHTML = html;
+}
+function goToSppVerify(id){ setView('spp'); setTimeout(function(){ verifySpp(id); }, 50); }
+
+// ============================================================
+// RENDER: SISWA
+// ============================================================
+function renderSiswa(){
+  var list = filteredSiswa();
+  var html = '';
+  if(isBendahara()){
+    html += '<div class="panel"><div class="panel-head"><div><h3>Tambah Siswa Baru</h3><p>Kode akses keuangan & nomor pendaftaran dibuat otomatis</p></div></div>';
+    html += '<div class="form-grid">';
+    html += '<div class="field"><label>Nama Anak</label><input type="text" id="newSiswaNama" placeholder="Nama lengkap anak"></div>';
+    html += '<div class="field"><label>Kelompok</label><select id="newSiswaKelompok"><option value="A">Kelompok A</option><option value="B">Kelompok B</option></select></div>';
+    html += '<div class="field"><label>Nama Orang Tua</label><input type="text" id="newSiswaOrtu" placeholder="Nama wali / orang tua"></div>';
+    html += '<div class="field"><label>No. WhatsApp</label><input type="text" id="newSiswaWa" placeholder="62..."></div>';
+    html += '</div><button class="btn btn-primary" onclick="addSiswa()">+ Tambah Siswa</button></div>';
+  }
+  html += '<div class="panel"><div class="panel-head"><div><h3>Daftar Siswa</h3><p>'+list.length+' siswa terdaftar</p></div></div>';
+  html += '<div class="table-wrap"><table><thead><tr><th>Nama Anak</th><th>Kelompok</th><th>No. Pendaftaran</th><th>Kode Akses</th><th>Orang Tua / WA</th>'+(isBendahara() ? '<th>Aksi</th>' : '')+'</tr></thead><tbody>';
+  list.forEach(function(s){
+    html += '<tr><td><strong>'+s.nama+'</strong></td><td>'+s.kelompok+'</td><td class="mono">'+s.regNo+'</td><td class="mono">'+s.kodeAkses+'</td><td>'+s.namaOrtu+'<br><span class="mono">'+s.noWa+'</span></td>';
+    if(isBendahara()) html += '<td><button class="btn btn-outline btn-sm" onclick="removeSiswa(\''+s.id+'\')">Hapus</button></td>';
+    html += '</tr>';
+  });
+  html += '</tbody></table></div></div>';
+  document.getElementById('view-siswa').innerHTML = html;
+}
+function addSiswa(){
+  var nama = document.getElementById('newSiswaNama').value.trim();
+  var ortu = document.getElementById('newSiswaOrtu').value.trim();
+  var wa = document.getElementById('newSiswaWa').value.trim();
+  var kelompok = document.getElementById('newSiswaKelompok').value;
+  if(!nama || !ortu || !wa){ alert('Mohon lengkapi semua kolom.'); return; }
+  var id = 's' + (DB.siswa.length + 1) + '_' + Date.now();
+  var rand = Math.random().toString(36).substring(2,7).toUpperCase();
+  var kode = String(Math.floor(100000 + Math.random()*899999));
+  DB.siswa.push({id:id, regNo:'RAW-2026-'+rand, nama:nama, kelompok:kelompok, namaOrtu:ortu, noWa:wa, kodeAkses:kode, status:'aktif'});
+  renderSiswa();
+}
+function removeSiswa(id){
+  if(!confirm('Hapus siswa ini beserta seluruh riwayat datanya?')) return;
+  DB.siswa = DB.siswa.filter(function(s){ return s.id !== id; });
+  renderSiswa();
+}
+
+// ============================================================
+// RENDER: SPP
+// ============================================================
+function renderSpp(){
+  var list = filteredSiswa();
+  var html = '<div class="panel"><div class="panel-head">';
+  html += '<div><h3>Tagihan SPP</h3><p>Nominal '+rp(SPP_NOMINAL)+' per bulan per siswa</p></div>';
+  html += '<select class="filter-select" id="sppBulanSelect">';
+  BULAN_LIST.forEach(function(b){ html += '<option value="'+b+'"'+(b===state.sppBulan?' selected':'')+'>'+BULAN_LABEL[b]+'</option>'; });
+  html += '</select></div>';
+  html += '<div class="table-wrap"><table><thead><tr><th>Nama Anak</th><th>Kelompok</th><th>Status</th><th>Metode</th><th>Tanggal Bayar</th>'+(isBendahara() ? '<th>Aksi</th>' : '')+'</tr></thead><tbody>';
+  list.forEach(function(s){
+    var r = DB.spp.filter(function(x){ return x.siswaId === s.id && x.bulan === state.sppBulan; })[0];
+    html += '<tr><td><strong>'+s.nama+'</strong></td><td>'+s.kelompok+'</td><td>'+badge(r.status)+'</td><td>'+(r.metode ? (r.metode === 'tunai' ? 'Tunai' : 'Transfer') : '—')+'</td><td>'+(r.tanggalBayar || '—')+'</td>';
+    if(isBendahara()){
+      html += '<td>';
+      if(r.status === 'belum') html += '<button class="btn btn-gold btn-sm" onclick="markSppLunas(\''+r.id+'\')">Tandai Lunas (Tunai)</button>';
+      else if(r.status === 'menunggu') html += '<button class="btn btn-primary btn-sm" onclick="verifySpp(\''+r.id+'\')">Verifikasi Transfer</button>';
+      else html += '<span class="mono">dicatat oleh '+r.dicatatOleh+'</span>';
+      html += '</td>';
+    }
+    html += '</tr>';
+  });
+  html += '</tbody></table></div></div>';
+  document.getElementById('view-spp').innerHTML = html;
+  document.getElementById('sppBulanSelect').addEventListener('change', function(e){ state.sppBulan = e.target.value; renderSpp(); });
+}
+function markSppLunas(id){
+  var r = DB.spp.filter(function(x){ return x.id === id; })[0];
+  r.status = 'lunas'; r.metode = 'tunai'; r.tanggalBayar = state.sppBulan+'-'+String(new Date().getDate()).padStart(2,'0'); r.dicatatOleh = 'Bendahara';
+  renderSpp(); renderDashboard();
+}
+function verifySpp(id){
+  var r = DB.spp.filter(function(x){ return x.id === id; })[0];
+  if(!r) return;
+  if(!confirm('Konfirmasi: nominal sudah cocok dengan mutasi rekening?')) return;
+  r.status = 'lunas'; r.dicatatOleh = 'Bendahara';
+  renderSpp(); renderDashboard();
+}
+
+// ============================================================
+// RENDER: TABUNGAN
+// ============================================================
+function renderTabungan(){
+  var list = filteredSiswa();
+  if(list.map(function(s){return s.id;}).indexOf(state.tabunganSiswaId) === -1 && list.length) state.tabunganSiswaId = list[0].id;
+  var s = getSiswa(state.tabunganSiswaId);
+  var rows = DB.tabungan.filter(function(t){ return t.siswaId === s.id; });
+  var saldo = rows.length ? rows[rows.length-1].saldoSetelah : 0;
+
+  var html = '<div class="panel"><div class="panel-head"><div><h3>Tabungan Siswa</h3><p>Pilih siswa untuk melihat riwayat setor & tarik</p></div>';
+  html += '<select class="filter-select" id="tabSiswaSelect">';
+  list.forEach(function(x){ html += '<option value="'+x.id+'"'+(x.id===s.id?' selected':'')+'>'+x.nama+' ('+x.kelompok+')</option>'; });
+  html += '</select></div>';
+  html += '<div class="kpi-card" style="max-width:260px;margin-bottom:18px;"><div class="kpi-label">Saldo Saat Ini</div><div class="kpi-value">'+rp(saldo)+'</div></div>';
+
+  if(isBendahara()){
+    html += '<div class="form-grid">';
+    html += '<div class="field"><label>Jenis</label><select id="tabJenis"><option value="setor">Setor</option><option value="tarik">Tarik</option></select></div>';
+    html += '<div class="field"><label>Nominal (Rp)</label><input type="number" id="tabNominal" placeholder="contoh: 20000"></div>';
+    html += '</div><button class="btn btn-primary" onclick="addTabungan()">+ Catat Transaksi</button>';
+  }
+  html += '</div>';
+
+  html += '<div class="panel"><div class="panel-head"><div><h3>Riwayat — '+s.nama+'</h3></div></div>';
+  html += '<div class="table-wrap"><table><thead><tr><th>Tanggal</th><th>Jenis</th><th>Nominal</th><th>Saldo Setelah</th><th>Dicatat Oleh</th></tr></thead><tbody>';
+  if(rows.length === 0) html += '<tr><td colspan="5" class="empty-note">Belum ada transaksi.</td></tr>';
+  rows.forEach(function(t){
+    html += '<tr><td>'+t.tanggal+'</td><td>'+(t.jenis === 'setor' ? 'Setor' : 'Tarik')+'</td><td>'+(t.jenis==='setor'?'+':'-')+rp(t.nominal)+'</td><td>'+rp(t.saldoSetelah)+'</td><td>'+t.dicatatOleh+'</td></tr>';
+  });
+  html += '</tbody></table></div></div>';
+
+  document.getElementById('view-tabungan').innerHTML = html;
+  document.getElementById('tabSiswaSelect').addEventListener('change', function(e){ state.tabunganSiswaId = e.target.value; renderTabungan(); });
+}
+function addTabungan(){
+  var jenis = document.getElementById('tabJenis').value;
+  var nominal = parseInt(document.getElementById('tabNominal').value, 10);
+  if(!nominal || nominal <= 0){ alert('Masukkan nominal yang valid.'); return; }
+  var rows = DB.tabungan.filter(function(t){ return t.siswaId === state.tabunganSiswaId; });
+  var saldoLama = rows.length ? rows[rows.length-1].saldoSetelah : 0;
+  if(jenis === 'tarik' && nominal > saldoLama){ alert('Saldo tidak mencukupi.'); return; }
+  var saldoBaru = jenis === 'setor' ? saldoLama + nominal : saldoLama - nominal;
+  var today = new Date().toISOString().slice(0,10);
+  DB.tabungan.push({id:'tab_'+state.tabunganSiswaId+'_'+Date.now(), siswaId:state.tabunganSiswaId, tanggal:today, jenis:jenis, nominal:nominal, saldoSetelah:saldoBaru, dicatatOleh:'Bendahara'});
+  renderTabungan(); renderDashboard();
+}
+
+// ============================================================
+// RENDER: BIAYA SEKOLAH
+// ============================================================
+function renderBiaya(){
+  var list = filteredSiswa();
+  var ids = list.map(function(s){ return s.id; });
+  var rows = DB.biaya.filter(function(b){ return ids.indexOf(b.siswaId) > -1; });
+  var html = '<div class="panel"><div class="panel-head"><div><h3>Biaya Sekolah (Sekali Bayar)</h3><p>Uang pangkal, seragam, dan biaya satu kali lainnya</p></div></div>';
+  html += '<div class="table-wrap"><table><thead><tr><th>Nama Anak</th><th>Jenis Biaya</th><th>Nominal</th><th>Status</th><th>Tanggal Bayar</th>'+(isBendahara()?'<th>Aksi</th>':'')+'</tr></thead><tbody>';
+  rows.forEach(function(b){
+    var s = getSiswa(b.siswaId);
+    html += '<tr><td><strong>'+s.nama+'</strong> <span class="mono">('+s.kelompok+')</span></td><td>'+b.jenis+'</td><td>'+rp(b.nominal)+'</td><td>'+badge(b.status)+'</td><td>'+(b.tanggalBayar||'—')+'</td>';
+    if(isBendahara()) html += '<td>'+(b.status==='belum' ? '<button class="btn btn-gold btn-sm" onclick="markBiayaLunas(\''+b.id+'\')">Tandai Lunas</button>' : '—')+'</td>';
+    html += '</tr>';
+  });
+  html += '</tbody></table></div></div>';
+  document.getElementById('view-biaya').innerHTML = html;
+}
+function markBiayaLunas(id){
+  var b = DB.biaya.filter(function(x){ return x.id === id; })[0];
+  b.status = 'lunas'; b.tanggalBayar = new Date().toISOString().slice(0,10);
+  renderBiaya(); renderDashboard();
+}
+
+// ============================================================
+// RENDER: KEGIATAN
+// ============================================================
+function renderKegiatan(){
+  var html = '';
+  if(isBendahara()){
+    html += '<div class="panel"><div class="panel-head"><div><h3>Tambah Kegiatan</h3></div></div>';
+    html += '<div class="form-grid"><div class="field"><label>Nama Kegiatan</label><input type="text" id="newKegNama" placeholder="contoh: Lomba Mewarnai"></div><div class="field"><label>Biaya per Anak (Rp)</label><input type="number" id="newKegNominal" placeholder="contoh: 75000"></div></div>';
+    html += '<button class="btn btn-primary" onclick="addKegiatan()">+ Tambah Kegiatan</button></div>';
+  }
+  html += '<div class="panel"><div class="panel-head"><div><h3>Kegiatan</h3><p>Klik kegiatan untuk lihat status bayar per siswa</p></div></div>';
+  html += '<div class="keg-card-grid">';
+  DB.kegiatan.forEach(function(k){
+    var bayarRows = DB.kegiatanBayar.filter(function(b){ return b.kegiatanId === k.id; });
+    var lunasCount = bayarRows.filter(function(b){ return b.kekurangan === 0; }).length;
+    html += '<div class="keg-card'+(k.id===state.kegiatanId?' active':'')+'" onclick="selectKegiatan(\''+k.id+'\')">';
+    html += '<h4>'+k.nama+'</h4><div class="keg-meta">'+k.tanggal+' · '+rp(k.totalPerAnak)+' / anak</div>';
+    html += '<div class="keg-progress"><div class="bar-track"><div class="bar-fill" style="width:'+Math.round(lunasCount/bayarRows.length*100)+'%"></div></div><div class="kpi-note" style="margin-top:6px;">'+lunasCount+' dari '+bayarRows.length+' sudah lunas</div></div>';
+    html += '</div>';
+  });
+  html += '</div></div>';
+
+  var keg = DB.kegiatan.filter(function(k){ return k.id === state.kegiatanId; })[0];
+  if(keg){
+    var list = filteredSiswa();
+    var ids = list.map(function(s){ return s.id; });
+    var bayarRows = DB.kegiatanBayar.filter(function(b){ return b.kegiatanId === keg.id && ids.indexOf(b.siswaId) > -1; });
+    html += '<div class="panel"><div class="panel-head"><div><h3>'+keg.nama+'</h3><p>Status bayar per siswa</p></div></div>';
+    html += '<div class="table-wrap"><table><thead><tr><th>Nama Anak</th><th>Sudah Dibayar</th><th>Kekurangan</th><th>Status</th>'+(isBendahara()?'<th>Aksi</th>':'')+'</tr></thead><tbody>';
+    bayarRows.forEach(function(b){
+      var s = getSiswa(b.siswaId);
+      var status = b.kekurangan === 0 ? 'lunas' : (b.dibayar > 0 ? 'sebagian' : 'belum');
+      html += '<tr><td><strong>'+s.nama+'</strong></td><td>'+rp(b.dibayar)+'</td><td>'+(b.kekurangan>0 ? rp(b.kekurangan) : '—')+'</td><td>'+(status==='lunas'?badge('lunas'):(status==='sebagian'?'<span class="badge badge-menunggu">Sebagian</span>':badge('belum')))+'</td>';
+      if(isBendahara()) html += '<td>'+(b.kekurangan>0 ? '<button class="btn btn-gold btn-sm" onclick="lunaskanKegiatan(\''+b.id+'\')">Tandai Lunas</button>' : '—')+'</td>';
+      html += '</tr>';
+    });
+    html += '</tbody></table></div></div>';
+  }
+  document.getElementById('view-kegiatan').innerHTML = html;
+}
+function selectKegiatan(id){ state.kegiatanId = id; renderKegiatan(); }
+function lunaskanKegiatan(id){
+  var b = DB.kegiatanBayar.filter(function(x){ return x.id === id; })[0];
+  var keg = DB.kegiatan.filter(function(k){ return k.id === b.kegiatanId; })[0];
+  b.dibayar = keg.totalPerAnak; b.kekurangan = 0;
+  renderKegiatan(); renderDashboard();
+}
+function addKegiatan(){
+  var nama = document.getElementById('newKegNama').value.trim();
+  var nominal = parseInt(document.getElementById('newKegNominal').value, 10);
+  if(!nama || !nominal){ alert('Lengkapi nama dan biaya kegiatan.'); return; }
+  var id = 'keg_' + Date.now();
+  DB.kegiatan.push({id:id, nama:nama, totalPerAnak:nominal, tanggal:new Date().toISOString().slice(0,10)});
+  DB.siswa.forEach(function(s){ DB.kegiatanBayar.push({id:'kb_'+id+'_'+s.id, kegiatanId:id, siswaId:s.id, dibayar:0, kekurangan:nominal}); });
+  state.kegiatanId = id;
+  renderKegiatan();
+}
+
+// ============================================================
+// RENDER: EXPORT / IMPORT
+// ============================================================
+function renderExport(){
+  var html = '<div class="panel"><div class="panel-head"><div><h3>Export Laporan ke Excel</h3><p>Untuk laporan ke yayasan atau arsip bendahara</p></div></div>';
+  html += '<div class="export-grid">';
+  html += '<div class="export-card"><h4>📋 Data Siswa</h4><p>Seluruh data siswa, kode akses, dan kontak orang tua.</p><button class="btn btn-outline btn-sm" onclick="exportSiswaExcel()">Export .xlsx</button></div>';
+  html += '<div class="export-card"><h4>🧾 Rekap SPP — '+BULAN_LABEL[state.sppBulan]+'</h4><p>Status pembayaran SPP bulan terpilih.</p><button class="btn btn-outline btn-sm" onclick="exportSppExcel()">Export .xlsx</button></div>';
+  html += '<div class="export-card"><h4>🐷 Riwayat Tabungan</h4><p>Seluruh transaksi tabungan semua siswa.</p><button class="btn btn-outline btn-sm" onclick="exportTabunganExcel()">Export .xlsx</button></div>';
+  html += '<div class="export-card"><h4>⚠️ Rekap Tunggakan</h4><p>SPP belum bayar, biaya sekolah, dan kekurangan kegiatan.</p><button class="btn btn-outline btn-sm" onclick="exportTunggakanExcel()">Export .xlsx</button></div>';
+  html += '</div></div>';
+
+  if(isBendahara()){
+    html += '<div class="panel"><div class="panel-head"><div><h3>Import Data Siswa</h3><p>Tambah banyak siswa sekaligus dari file Excel</p></div></div>';
+    html += '<button class="btn btn-outline btn-sm" onclick="downloadTemplate()" style="margin-bottom:14px;">Unduh Template Import</button><br>';
+    html += '<input type="file" id="importFile" accept=".xlsx,.xls">';
+    html += '<div id="importPreview"></div></div>';
+  }
+  document.getElementById('view-export').innerHTML = html;
+  if(isBendahara()){
+    document.getElementById('importFile').addEventListener('change', handleImportFile);
+  }
+}
+function exportSiswaExcel(){
+  var rows = DB.siswa.map(function(s){ return {'No Pendaftaran':s.regNo,'Nama Anak':s.nama,'Kelompok':s.kelompok,'Nama Orang Tua':s.namaOrtu,'No WhatsApp':s.noWa,'Kode Akses Keuangan':s.kodeAkses,'Status':s.status}; });
+  var ws = XLSX.utils.json_to_sheet(rows);
+  var wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Data Siswa');
+  XLSX.writeFile(wb, 'data-siswa-ra-alwashliyah.xlsx');
+}
+function exportSppExcel(){
+  var rows = DB.spp.filter(function(r){ return r.bulan === state.sppBulan; }).map(function(r){
+    var s = getSiswa(r.siswaId);
+    return {'Nama Anak':s.nama,'Kelompok':s.kelompok,'Bulan':BULAN_LABEL[r.bulan],'Nominal':r.nominal,'Status':r.status,'Metode':r.metode||'-','Tanggal Bayar':r.tanggalBayar||'-'};
+  });
+  var ws = XLSX.utils.json_to_sheet(rows);
+  var wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'SPP');
+  XLSX.writeFile(wb, 'rekap-spp-'+state.sppBulan+'.xlsx');
+}
+function exportTabunganExcel(){
+  var rows = DB.tabungan.map(function(t){
+    var s = getSiswa(t.siswaId);
+    return {'Nama Anak':s.nama,'Kelompok':s.kelompok,'Tanggal':t.tanggal,'Jenis':t.jenis,'Nominal':t.nominal,'Saldo Setelah':t.saldoSetelah};
+  });
+  var ws = XLSX.utils.json_to_sheet(rows);
+  var wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Tabungan');
+  XLSX.writeFile(wb, 'riwayat-tabungan.xlsx');
+}
+function exportTunggakanExcel(){
+  var rows = [];
+  DB.spp.filter(function(r){ return r.status === 'belum'; }).forEach(function(r){
+    var s = getSiswa(r.siswaId);
+    rows.push({'Nama Anak':s.nama,'Kelompok':s.kelompok,'Jenis':'SPP '+BULAN_LABEL[r.bulan],'Kekurangan':r.nominal});
+  });
+  DB.biaya.filter(function(b){ return b.status === 'belum'; }).forEach(function(b){
+    var s = getSiswa(b.siswaId);
+    rows.push({'Nama Anak':s.nama,'Kelompok':s.kelompok,'Jenis':b.jenis,'Kekurangan':b.nominal});
+  });
+  DB.kegiatanBayar.filter(function(b){ return b.kekurangan > 0; }).forEach(function(b){
+    var s = getSiswa(b.siswaId);
+    var keg = DB.kegiatan.filter(function(k){ return k.id === b.kegiatanId; })[0];
+    rows.push({'Nama Anak':s.nama,'Kelompok':s.kelompok,'Jenis':'Kegiatan: '+keg.nama,'Kekurangan':b.kekurangan});
+  });
+  var ws = XLSX.utils.json_to_sheet(rows);
+  var wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Tunggakan');
+  XLSX.writeFile(wb, 'rekap-tunggakan.xlsx');
+}
+function downloadTemplate(){
+  var ws = XLSX.utils.json_to_sheet([{'Nama Anak':'','Kelompok':'A atau B','Nama Orang Tua':'','No WhatsApp':''}]);
+  var wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Template');
+  XLSX.writeFile(wb, 'template-import-siswa.xlsx');
+}
+function handleImportFile(e){
+  var file = e.target.files[0];
+  if(!file) return;
+  var reader = new FileReader();
+  reader.onload = function(evt){
+    var data = new Uint8Array(evt.target.result);
+    var wb = XLSX.read(data, {type:'array'});
+    var ws = wb.Sheets[wb.SheetNames[0]];
+    var json = XLSX.utils.sheet_to_json(ws);
+    previewImport(json);
+  };
+  reader.readAsArrayBuffer(file);
+}
+var pendingImport = [];
+function previewImport(json){
+  pendingImport = json.filter(function(r){ return r['Nama Anak']; });
+  var html = '<div class="import-preview"><table><thead><tr><th>Nama Anak</th><th>Kelompok</th><th>Orang Tua</th><th>WA</th></tr></thead><tbody>';
+  pendingImport.forEach(function(r){
+    html += '<tr><td>'+(r['Nama Anak']||'')+'</td><td>'+(r['Kelompok']||'')+'</td><td>'+(r['Nama Orang Tua']||'')+'</td><td>'+(r['No WhatsApp']||'')+'</td></tr>';
+  });
+  html += '</tbody></table></div><button class="btn btn-primary btn-sm" style="margin-top:12px;" onclick="confirmImport()">Tambahkan '+pendingImport.length+' Siswa ke Data</button>';
+  document.getElementById('importPreview').innerHTML = pendingImport.length ? html : '<p class="empty-note">Tidak ada baris valid ditemukan di file ini.</p>';
+}
+function confirmImport(){
+  pendingImport.forEach(function(r, i){
+    var rand = Math.random().toString(36).substring(2,7).toUpperCase();
+    var kode = String(Math.floor(100000 + Math.random()*899999));
+    DB.siswa.push({
+      id: 'simp_' + Date.now() + '_' + i,
+      regNo: 'RAW-2026-' + rand,
+      nama: r['Nama Anak'] || 'Tanpa Nama',
+      kelompok: (r['Kelompok'] === 'B') ? 'B' : 'A',
+      namaOrtu: r['Nama Orang Tua'] || '-',
+      noWa: String(r['No WhatsApp'] || '-'),
+      kodeAkses: kode,
+      status: 'aktif'
+    });
+  });
+  alert(pendingImport.length + ' siswa berhasil ditambahkan.');
+  pendingImport = [];
+  document.getElementById('importPreview').innerHTML = '';
+  document.getElementById('importFile').value = '';
+  renderSiswa();
+}
+
+// ============================================================
+// PARENT PORTAL
+// ============================================================
+document.getElementById('openParentPortal').addEventListener('click', function(){
+  document.getElementById('parentModal').classList.remove('hidden');
+  document.getElementById('parentLogin').classList.remove('hidden');
+  document.getElementById('parentResult').classList.add('hidden');
+  document.getElementById('parentCode').value = '';
+  document.getElementById('parentError').style.display = 'none';
+});
+document.getElementById('closeParentPortal').addEventListener('click', function(){
+  document.getElementById('parentModal').classList.add('hidden');
+});
+document.getElementById('parentSubmit').addEventListener('click', function(){
+  var code = document.getElementById('parentCode').value.trim();
+  var s = DB.siswa.filter(function(x){ return x.kodeAkses === code; })[0];
+  var errEl = document.getElementById('parentError');
+  if(!s){ errEl.textContent = 'Kode akses tidak ditemukan. Periksa kembali.'; errEl.style.display = 'block'; return; }
+  errEl.style.display = 'none';
+  var sppRows = DB.spp.filter(function(r){ return r.siswaId === s.id; });
+  var tabRows = DB.tabungan.filter(function(t){ return t.siswaId === s.id; });
+  var saldo = tabRows.length ? tabRows[tabRows.length-1].saldoSetelah : 0;
+  var kekuranganKeg = DB.kegiatanBayar.filter(function(b){ return b.siswaId === s.id && b.kekurangan > 0; });
+
+  var html = '<h3 style="margin-bottom:2px;">'+s.nama+'</h3><p style="font-size:12.5px;color:var(--ink-soft);margin-bottom:16px;">Kelompok '+s.kelompok+' · '+s.regNo+'</p>';
+  html += '<p style="font-size:12px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;margin-bottom:4px;">Status SPP</p>';
+  sppRows.forEach(function(r){ html += '<div class="pp-row"><span>'+BULAN_LABEL[r.bulan]+'</span>'+badge(r.status)+'</div>'; });
+  html += '<p style="font-size:12px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;margin:14px 0 4px;">Tabungan</p>';
+  html += '<div class="pp-row"><span>Saldo saat ini</span><strong>'+rp(saldo)+'</strong></div>';
+  html += '<p style="font-size:12px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;margin:14px 0 4px;">Kekurangan Biaya Kegiatan</p>';
+  if(kekuranganKeg.length === 0){ html += '<p style="font-size:13px;color:var(--ink-soft);">Tidak ada kekurangan 🎉</p>'; }
+  kekuranganKeg.forEach(function(b){
+    var keg = DB.kegiatan.filter(function(k){ return k.id === b.kegiatanId; })[0];
+    html += '<div class="pp-row"><span>'+keg.nama+'</span><strong style="color:var(--terracotta);">'+rp(b.kekurangan)+'</strong></div>';
+  });
+
+  document.getElementById('parentResult').innerHTML = html;
+  document.getElementById('parentLogin').classList.add('hidden');
+  document.getElementById('parentResult').classList.remove('hidden');
+});
+
+// ============================================================
+// NAVIGATION & INIT
+// ============================================================
+var pageTitles = {
+  dashboard:['Dashboard','Ringkasan keuangan tahun ajaran 2025/2026'],
+  siswa:['Data Siswa','Kelola data siswa & kode akses orang tua'],
+  spp:['SPP','Tagihan & status pembayaran bulanan'],
+  tabungan:['Tabungan','Kartu tabungan digital per siswa'],
+  biaya:['Biaya Sekolah','Uang pangkal, seragam, dan biaya satu kali'],
+  kegiatan:['Kegiatan','Lacak biaya kegiatan & kekurangan per siswa'],
+  export:['Export / Import','Unduh laporan atau unggah data massal']
+};
+function setView(view){
+  state.view = view;
+  document.querySelectorAll('.view').forEach(function(v){ v.classList.add('hidden'); });
+  document.getElementById('view-'+view).classList.remove('hidden');
+  document.querySelectorAll('.nav-btn').forEach(function(b){ b.classList.toggle('active', b.dataset.view === view); });
+  document.getElementById('pageTitle').textContent = pageTitles[view][0];
+  document.getElementById('pageSub').textContent = pageTitles[view][1];
+  renderAll();
+}
+function renderAll(){
+  if(state.view === 'dashboard') renderDashboard();
+  else if(state.view === 'siswa') renderSiswa();
+  else if(state.view === 'spp') renderSpp();
+  else if(state.view === 'tabungan') renderTabungan();
+  else if(state.view === 'biaya') renderBiaya();
+  else if(state.view === 'kegiatan') renderKegiatan();
+  else if(state.view === 'export') renderExport();
+}
+document.querySelectorAll('.nav-btn').forEach(function(btn){
+  btn.addEventListener('click', function(){ setView(btn.dataset.view); });
+});
+document.getElementById('roleSwitch').addEventListener('change', function(e){ state.role = e.target.value; renderAll(); });
+document.getElementById('kelompokFilter').addEventListener('change', function(e){ state.kelompok = e.target.value; renderAll(); });
+
+renderAll();
+</script>
+</body>
+</html>
